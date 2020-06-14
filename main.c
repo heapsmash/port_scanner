@@ -42,10 +42,9 @@ int main(int argc, char **argv)
                 fprintf(stderr, "Usage: %s host start_port:end_port\n", argv[0]);
                 return 1;
         }
+
         struct sockaddr_in addr;
-
         memset(&addr, 0, sizeof(struct sockaddr_in));
-
         addr.sin_family = AF_INET;
         if (inet_pton(AF_INET, argv[1], &addr.sin_addr) <= 0)
         {
@@ -53,28 +52,28 @@ int main(int argc, char **argv)
                 return 1;
         }
 
-        struct timeval time;
+        struct timeval timeout;
         for (int port = start_port; port <= end_port; port++)
         {
 
-                time.tv_sec = 1;
-                time.tv_usec = 0;
+                timeout.tv_sec = 1;
+                timeout.tv_usec = 0;
 
                 int socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-                if (setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *)&time, sizeof(struct timeval)) < 0)
+                if (socket_fd == -1)
+                {
+                        perror("socket");
+                        return 1;
+                }
+
+                if (setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *)&timeout, sizeof(struct timeval)) < 0)
                 {
                         fprintf(stderr, "setsockopt failed for address '%s'", argv[1]);
                         close(socket_fd);
                         return 1;
                 }
 
-                if (socket_fd == -1)
-                {
-                        perror("socket");
-                        return 1;
-                }
                 addr.sin_port = htons(port);
-
                 if (connect(socket_fd, (struct sockaddr *)&addr, sizeof addr) != -1)
                 {
                         printf("port %d open\n", port);
