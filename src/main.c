@@ -2,6 +2,9 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+
 #include "tlpi_hdr.h"
 
 #define BUF_SIZE 10 // Maximum size of messages exchanged  between client and server
@@ -10,20 +13,25 @@ int main(int argc, char **argv)
 {
         struct sockaddr_in addr;
         int socket_fd;
-        short port;
 
         if (argc < 3 || strcmp(argv[1], "--help") == 0 || strchr(argv[2], ':') == NULL)
                 usageErr("Usage: %s host start_port:end_port\n", argv[0]);
 
-        char *start_port = strtok(argv[2], ":");
-        char *end_port = strtok(NULL, ":");
+        char *endptr, *range;
 
-        if (end_port == NULL)
-                usageErr("Usage: %s host port_start:port_end\n", argv[0]);
+        range = argv[2];
 
-        int n_end_port = getInt(end_port, GN_ANY_BASE, argv[0]);
+        errno = 0;
+        long start_port = strtol(range, &endptr, 10);
+        if ((errno == ERANGE && (start_port == LONG_MAX || start_port == LONG_MIN)) || (errno != 0 && start_port == 0))
+                errExit("strtol");
 
-        for (int current_port = getInt(start_port, GN_ANY_BASE, argv[0]); current_port <= n_end_port; current_port++)
+        if (*endptr == '\0' || *endptr != ':')
+                usageErr("Usage: %s host start_port:end_port\n", argv[0]);
+        endptr++;
+        long end_port = getInt(endptr, GN_ANY_BASE, argv[0]);
+
+        for (int current_port = start_port; current_port <= end_port; current_port++)
         {
                 socket_fd = socket(AF_INET, SOCK_STREAM, 0);
                 if (socket_fd == -1)
@@ -41,5 +49,6 @@ int main(int argc, char **argv)
                         close(socket_fd);
                 }
         }
+
         return 0;
 }
