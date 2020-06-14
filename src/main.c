@@ -32,6 +32,9 @@ int main(int argc, char **argv)
                 usageErr("Usage: %s host start_port:end_port\n", argv[0]);
 
         struct sockaddr_in addr;
+
+        memset(&addr, 0, sizeof(struct sockaddr_in));
+        addr.sin_family = AF_INET;
         if (inet_pton(AF_INET, argv[1], &addr.sin_addr) <= 0)
                 fatal("inet_pton failed for address '%s'", argv[1]);
 
@@ -41,9 +44,6 @@ int main(int argc, char **argv)
                 int socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
                 if (socket_fd == -1)
                         errExit("socket");
-
-                memset(&addr, 0, sizeof(struct sockaddr_in));
-                addr.sin_family = AF_INET;
                 addr.sin_port = htons(port);
 
                 if (connect(socket_fd, (struct sockaddr *)&addr, sizeof addr) != -1)
