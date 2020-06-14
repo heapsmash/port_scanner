@@ -31,21 +31,21 @@ int main(int argc, char **argv)
         endptr++;
         long end_port = getInt(endptr, GN_ANY_BASE, argv[0]);
 
-        for (int current_port = start_port; current_port <= end_port; current_port++)
+        for (int port = start_port; port <= end_port; port++)
         {
-                socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+                socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
                 if (socket_fd == -1)
                         errExit("socket");
 
                 memset(&addr, 0, sizeof(struct sockaddr_in));
                 addr.sin_family = AF_INET;
-                addr.sin_port = htons(current_port);
+                addr.sin_port = htons(port);
                 if (inet_pton(AF_INET, argv[1], &addr.sin_addr) <= 0)
                         fatal("inet_pton failed for address '%s'", argv[1]);
 
                 if (connect(socket_fd, (struct sockaddr *)&addr, sizeof addr) != -1)
                 {
-                        printf("port %d open\n", current_port);
+                        printf("port %d open\n", port);
                         close(socket_fd);
                 }
         }
