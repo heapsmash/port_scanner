@@ -5,13 +5,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 
 int main(int argc, char **argv)
 {
-        if (argc < 3 || strcmp(argv[1], "--help") == 0 || strchr(argv[2], ':') == NULL)
+        if (argc < 3 || strcmp(argv[1], "--help") == 0)
         {
                 fprintf(stderr, "Usage: %s host start_port:end_port\n", argv[0]);
                 return 1;
@@ -42,6 +45,7 @@ int main(int argc, char **argv)
         struct sockaddr_in addr;
 
         memset(&addr, 0, sizeof(struct sockaddr_in));
+
         addr.sin_family = AF_INET;
         if (inet_pton(AF_INET, argv[1], &addr.sin_addr) <= 0)
         {
@@ -49,10 +53,21 @@ int main(int argc, char **argv)
                 return 1;
         }
 
+        struct timeval time;
         for (int port = start_port; port <= end_port; port++)
         {
 
+                time.tv_sec = 1;
+                time.tv_usec = 0;
+
                 int socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+                if (setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *)&time, sizeof(struct timeval)) < 0)
+                {
+                        fprintf(stderr, "setsockopt failed for address '%s'", argv[1]);
+                        close(socket_fd);
+                        return 1;
+                }
+
                 if (socket_fd == -1)
                 {
                         perror("socket");
