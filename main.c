@@ -12,10 +12,75 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 
-#define NUM_THREADS 20
+#define PORT_MAX (65535)
 
-void *scanner(void *argv)
+#define handle_error_en(en, msg)    \
+        do                          \
+        {                           \
+                errno = en;         \
+                perror(msg);        \
+                exit(EXIT_FAILURE); \
+        } while (0)
+
+#define handle_error(msg)           \
+        do                          \
+        {                           \
+                perror(msg);        \
+                exit(EXIT_FAILURE); \
+        } while (0)
+
+struct thread_info
 {
+        pthread_t thread_id;
+        char *host;
+        long start_port;
+        long end_port;
+};
+
+static void *
+scanner(void *arg)
+{
+        struct thread_info *tinfo = arg;
+
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(struct sockaddr_in));
+        addr.sin_family = AF_INET;
+        if (inet_pton(AF_INET, tinfo->host, &addr.sin_addr) <= 0)
+                handle_error("inet_pton failed");
+
+        struct timeval timeout;
+        for (int port = tinfo->start_port; port <= tinfo->end_port; port++)
+        {
+                timeout.tv_sec = 1;
+                timeout.tv_usec = 0;
+
+                int socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+                if (socket_fd == -1)
+                        handle_error("socket");
+
+                if (setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *)&timeout, sizeof(struct timeval)) < 0)
+                {
+                        close(socket_fd);
+                        handle_error("setsockopt failed");
+                }
+
+                addr.sin_port = htons(port);
+                if (connect(socket_fd, (struct sockaddr *)&addr, sizeof addr) != -1)
+                {
+                        printf("port %d open\n", port);
+                        close(socket_fd);
+                }
+        }
+
+        return NULL;
+}
+
+int gcd(int n1, int n2)
+{
+        if (n2 != 0)
+                return gcd(n2, n1 % n2);
+        else
+                return n1;
 }
 
 int main(int argc, char **argv)
@@ -49,44 +114,17 @@ int main(int argc, char **argv)
                 return 1;
         }
 
-        pthread_t newthread[NUM_THREADS];
+        int t_num = (3282 / PORT_MAX) + 1;
 
-        struct sockaddr_in addr;
-        memset(&addr, 0, sizeof(struct sockaddr_in));
-        addr.sin_family = AF_INET;
-        if (inet_pton(AF_INET, argv[1], &addr.sin_addr) <= 0)
+        struct thread_info tinfo[t_num];
+        for (int tnum = 0; tnum < 20; tnum++)
         {
-                fprintf(stderr, "inet_pton failed for address '%s'", argv[1]);
-                return 1;
-        }
-
-        struct timeval timeout;
-        for (int port = start_port; port <= end_port; port++)
-        {
-
-                timeout.tv_sec = 1;
-                timeout.tv_usec = 0;
-
-                int socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-                if (socket_fd == -1)
-                {
-                        perror("socket");
-                        return 1;
-                }
-
-                if (setsockopt(socket_fd, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *)&timeout, sizeof(struct timeval)) < 0)
-                {
-                        fprintf(stderr, "setsockopt failed for address '%s'", argv[1]);
-                        close(socket_fd);
-                        return 1;
-                }
-
-                addr.sin_port = htons(port);
-                if (connect(socket_fd, (struct sockaddr *)&addr, sizeof addr) != -1)
-                {
-                        printf("port %d open\n", port);
-                        close(socket_fd);
-                }
+                tinfo[tnum].start_port = start_port;
+                
+                int s = pthread_create(&tinfo[tnum].thread_id, NULL,
+                                       &scanner, &tinfo[tnum]);
+                if (s != 0)
+                        handle_error_en(s, "pthread_create");
         }
 
         return 0;
