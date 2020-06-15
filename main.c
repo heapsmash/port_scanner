@@ -6,11 +6,17 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-
+#include <pthread.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+
+#define NUM_THREADS 20
+
+void *scanner(void *argv)
+{
+}
 
 int main(int argc, char **argv)
 {
@@ -42,6 +48,8 @@ int main(int argc, char **argv)
                 fprintf(stderr, "Usage: %s host start_port:end_port\n", argv[0]);
                 return 1;
         }
+
+        pthread_t newthread[NUM_THREADS];
 
         struct sockaddr_in addr;
         memset(&addr, 0, sizeof(struct sockaddr_in));
