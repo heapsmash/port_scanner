@@ -75,14 +75,6 @@ scanner(void *arg)
         return NULL;
 }
 
-int gcd(int n1, int n2)
-{
-        if (n2 != 0)
-                return gcd(n2, n1 % n2);
-        else
-                return n1;
-}
-
 int main(int argc, char **argv)
 {
         if (argc < 3 || strcmp(argv[1], "--help") == 0)
@@ -120,7 +112,7 @@ int main(int argc, char **argv)
         for (int tnum = 0; tnum < 20; tnum++)
         {
                 tinfo[tnum].start_port = start_port;
-                
+
                 int s = pthread_create(&tinfo[tnum].thread_id, NULL,
                                        &scanner, &tinfo[tnum]);
                 if (s != 0)
