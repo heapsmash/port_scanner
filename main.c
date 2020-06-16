@@ -12,7 +12,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 
-#define PORT_MAX (65535)
+#define NUM_THREADS (20)
 
 #define handle_error_en(en, msg)    \
         do                          \
@@ -106,18 +106,22 @@ int main(int argc, char **argv)
                 return 1;
         }
 
-        int t_num = (3282 / PORT_MAX) + 1;
+        int total_ports = end_port - start_port + 1;
+        int extra_port = total_ports % NUM_THREADS;
+        int ports_per_thread = total_ports / NUM_THREADS;
 
-        struct thread_info tinfo[t_num];
-        for (int tnum = 0; tnum < 20; tnum++)
-        {
-                tinfo[tnum].start_port = start_port;
+        printf("total ports: %d ports per thread: %d extra ports: %d\n", total_ports, ports_per_thread, extra_port);
 
-                int s = pthread_create(&tinfo[tnum].thread_id, NULL,
-                                       &scanner, &tinfo[tnum]);
-                if (s != 0)
-                        handle_error_en(s, "pthread_create");
-        }
+        // struct thread_info tinfo[NUM_THREADS];
+        // for (int tnum = 0; tnum < 20; tnum++)
+        // {
+        //         tinfo[tnum].start_port = start_port;
+
+        //         int s = pthread_create(&tinfo[tnum].thread_id, NULL,
+        //                                &scanner, &tinfo[tnum]);
+        //         if (s != 0)
+        //                 handle_error_en(s, "pthread_create");
+        // }
 
         return 0;
 }
