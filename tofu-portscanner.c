@@ -1,5 +1,5 @@
 /**
- * Multi threaded port scanner
+ * multi threaded port scanner
  * tofu@rootstorm.com
  * 
  * $ gcc tofu-portscan.c -lpthread -o tofu-portscan
