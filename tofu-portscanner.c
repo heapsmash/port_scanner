@@ -5,7 +5,7 @@
  * $ gcc tofu-portscan.c -lpthread -o tofu-portscan
  * $ ./tofu-portscan 127.0.0.1 0:6000
  * 
- */ 
+ */
 
 #include <ctype.h>
 #include <errno.h>
@@ -117,12 +117,12 @@ int main(int argc, char **argv)
                 return 1;
         }
 
-        int total_ports = end_port - start_port + 1;
+        int total_ports = end_port - start_port;
         int extra_port = total_ports % NUM_THREADS;
         int ports_per_thread = total_ports / NUM_THREADS;
-        int num_threads = (total_ports - extra_port) / ports_per_thread;
+        int num_threads = ports_per_thread == 0 ? 1 : 20;
         struct thread_info *tinfo;
-
+        printf("extra ports: %d\ntotal ports: %d\nports per thread: %d\nnumber of threads: %d\n", extra_port, total_ports, ports_per_thread, num_threads);
         tinfo = calloc(num_threads, sizeof(struct thread_info));
         if (tinfo == NULL)
                 handle_error("calloc");
@@ -131,13 +131,15 @@ int main(int argc, char **argv)
         {
                 tinfo[tnum].host = argv[1];
                 tinfo[tnum].start_port = start_port;
-                start_port += ports_per_thread;
-                if (extra_port > 0 && tnum == num_threads - 1)
+                start_port += (ports_per_thread - 1);
+                if (tnum == num_threads - 1)
                 {
-                        printf("got here with %d extra ports\n", extra_port);
-                        start_port += extra_port;
+                        printf("adding %d extra ports \n", extra_port);
+                        start_port += extra_port + 1;
                 }
                 tinfo[tnum].end_port = start_port;
+                start_port += 1;
+                printf("thread_num: %d (start: %d - end: %d)\n", tnum, tinfo[tnum].start_port, tinfo[tnum].end_port);
 
                 int s = pthread_create(&tinfo[tnum].thread_id, NULL,
                                        &scanner, &tinfo[tnum]);
