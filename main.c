@@ -1,3 +1,8 @@
+/**
+ * Multi threaded port scanner
+ * tofu@rootstorm.com 
+ */ 
+
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -49,12 +54,13 @@ scanner(void *arg)
                 handle_error("inet_pton failed");
 
         struct timeval timeout;
+        int socket_fd;
         for (int port = tinfo->start_port; port <= tinfo->end_port; port++)
         {
                 timeout.tv_sec = 1;
                 timeout.tv_usec = 0;
 
-                int socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+                socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
                 if (socket_fd == -1)
                         handle_error("socket");
 
@@ -72,6 +78,7 @@ scanner(void *arg)
                 }
         }
 
+        close(socket_fd);
         return NULL;
 }
 
@@ -109,19 +116,40 @@ int main(int argc, char **argv)
         int total_ports = end_port - start_port + 1;
         int extra_port = total_ports % NUM_THREADS;
         int ports_per_thread = total_ports / NUM_THREADS;
+        int num_threads = (total_ports - extra_port) / ports_per_thread;
+        struct thread_info *tinfo;
 
-        printf("total ports: %d ports per thread: %d extra ports: %d\n", total_ports, ports_per_thread, extra_port);
+        tinfo = calloc(num_threads, sizeof(struct thread_info));
+        if (tinfo == NULL)
+                handle_error("calloc");
 
-        // struct thread_info tinfo[NUM_THREADS];
-        // for (int tnum = 0; tnum < 20; tnum++)
-        // {
-        //         tinfo[tnum].start_port = start_port;
+        for (int tnum = 0; tnum < num_threads; tnum++)
+        {
+                tinfo[tnum].host = argv[1];
+                tinfo[tnum].start_port = start_port;
+                start_port += ports_per_thread;
+                if (extra_port > 0 && tnum == num_threads - 1)
+                {
+                        printf("got here with %d extra ports\n", extra_port);
+                        start_port += extra_port;
+                }
+                tinfo[tnum].end_port = start_port;
 
-        //         int s = pthread_create(&tinfo[tnum].thread_id, NULL,
-        //                                &scanner, &tinfo[tnum]);
-        //         if (s != 0)
-        //                 handle_error_en(s, "pthread_create");
-        // }
+                int s = pthread_create(&tinfo[tnum].thread_id, NULL,
+                                       &scanner, &tinfo[tnum]);
+                if (s != 0)
+                        handle_error_en(s, "pthread_create");
+        }
+
+        for (int tnum = 0; tnum < num_threads; tnum++)
+        {
+                int s = pthread_join(tinfo[tnum].thread_id, NULL);
+                if (s != 0)
+                        handle_error_en(s, "pthread_join");
+        }
+
+        free(tinfo);
+        exit(EXIT_SUCCESS);
 
         return 0;
 }
