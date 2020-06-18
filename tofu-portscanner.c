@@ -122,7 +122,6 @@ int main(int argc, char **argv)
         int ports_per_thread = total_ports / NUM_THREADS;
         int num_threads = ports_per_thread == 0 ? 1 : 20;
         struct thread_info *tinfo;
-        printf("extra ports: %d\ntotal ports: %d\nports per thread: %d\nnumber of threads: %d\n", extra_port, total_ports, ports_per_thread, num_threads);
         tinfo = calloc(num_threads, sizeof(struct thread_info));
         if (tinfo == NULL)
                 handle_error("calloc");
@@ -133,13 +132,9 @@ int main(int argc, char **argv)
                 tinfo[tnum].start_port = start_port;
                 start_port += (ports_per_thread - 1);
                 if (tnum == num_threads - 1)
-                {
-                        printf("adding %d extra ports \n", extra_port);
                         start_port += extra_port + 1;
-                }
                 tinfo[tnum].end_port = start_port;
                 start_port += 1;
-                printf("thread_num: %d (start: %d - end: %d)\n", tnum, tinfo[tnum].start_port, tinfo[tnum].end_port);
 
                 int s = pthread_create(&tinfo[tnum].thread_id, NULL,
                                        &scanner, &tinfo[tnum]);
