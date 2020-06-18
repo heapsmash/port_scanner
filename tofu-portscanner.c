@@ -130,9 +130,9 @@ int main(int argc, char **argv)
         for (int tnum = 0; tnum < num_threads; tnum++)
         {
                 tinfo[tnum].host = argv[1];
-
                 tinfo[tnum].start_port = start_port;
                 start_port += (ports_per_thread - 1);
+
                 if (tnum == num_threads - 1)
                 {
 #if DEBUG == 1
@@ -140,12 +140,13 @@ int main(int argc, char **argv)
 #endif
                         start_port += extra_port + 1;
                 }
+
                 tinfo[tnum].end_port = start_port;
                 start_port += 1;
-
 #if DEBUG == 1
                 printf("thread_num: %d (start: %d - end: %d)\n", tnum, tinfo[tnum].start_port, tinfo[tnum].end_port);
 #endif
+
                 int s = pthread_create(&tinfo[tnum].thread_id, NULL,
                                        &scanner, &tinfo[tnum]);
                 if (s != 0)
