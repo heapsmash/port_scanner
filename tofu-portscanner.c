@@ -1,6 +1,10 @@
 /**
  * Multi threaded port scanner
- * tofu@rootstorm.com 
+ * tofu@rootstorm.com
+ * 
+ * $ gcc tofu-portscan.c -lpthread -o tofu-portscan
+ * $ ./tofu-portscan 127.0.0.1 0:6000
+ * 
  */ 
 
 #include <ctype.h>
