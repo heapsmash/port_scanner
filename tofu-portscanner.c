@@ -124,9 +124,6 @@ int main(int argc, char **argv)
         struct thread_info tinfo[NUM_THREADS];
 
         int num_threads = ports_per_thread == 0 ? 1 : 20;
-#if DEBUG == 1
-        printf("extra ports: %d\ntotal ports: %d\nports per thread: %d\nnumber of threads: %d\n", extra_port, total_ports, ports_per_thread, num_threads);
-#endif
         for (int tnum = 0; tnum < num_threads; tnum++)
         {
                 tinfo[tnum].host = argv[1];
@@ -134,18 +131,10 @@ int main(int argc, char **argv)
                 start_port += (ports_per_thread - 1);
 
                 if (tnum == num_threads - 1)
-                {
-#if DEBUG == 1
-                        printf("adding %d extra ports \n", extra_port);
-#endif
                         start_port += extra_port + 1;
-                }
                 tinfo[tnum].end_port = start_port;
-#if DEBUG == 1
-                printf("thread_num: %d (start: %d - end: %d)\n", tnum, tinfo[tnum].start_port, tinfo[tnum].end_port);
-#endif
-
                 start_port += 1;
+
                 int s = pthread_create(&tinfo[tnum].thread_id, NULL,
                                        &scanner, &tinfo[tnum]);
                 if (s != 0)
