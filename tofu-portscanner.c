@@ -50,8 +50,8 @@ static void *
 scanner(void *arg)
 {
         struct thread_info *tinfo = arg;
-
         struct sockaddr_in addr;
+
         memset(&addr, 0, sizeof(struct sockaddr_in));
         addr.sin_family = AF_INET;
         if (inet_pton(AF_INET, tinfo->host, &addr.sin_addr) <= 0)
@@ -80,15 +80,15 @@ scanner(void *arg)
                         printf("port %d open\n", port);
                         close(socket_fd);
                 }
+                close(socket_fd);
         }
 
-        close(socket_fd);
         return NULL;
 }
 
 int main(int argc, char **argv)
 {
-        if (argc < 3 || strcmp(argv[1], "--help") == 0)
+        if (argc < 3)
         {
                 fprintf(stderr, "Usage: %s host start_port:end_port\n", argv[0]);
                 return 1;
