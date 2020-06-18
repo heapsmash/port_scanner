@@ -22,7 +22,6 @@
 #include <sys/time.h>
 
 #define NUM_THREADS (20)
-#define DEBUG (1)
 
 #define handle_error_en(en, msg)    \
         do                          \
