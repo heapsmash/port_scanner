@@ -22,6 +22,7 @@
 #include <sys/time.h>
 
 #define NUM_THREADS (20)
+#define DEBUG (1)
 
 #define handle_error_en(en, msg)    \
         do                          \
@@ -120,22 +121,31 @@ int main(int argc, char **argv)
         int total_ports = end_port - start_port;
         int extra_port = total_ports % NUM_THREADS;
         int ports_per_thread = total_ports / NUM_THREADS;
-        int num_threads = ports_per_thread == 0 ? 1 : 20;
-        struct thread_info *tinfo;
-        tinfo = calloc(num_threads, sizeof(struct thread_info));
-        if (tinfo == NULL)
-                handle_error("calloc");
+        struct thread_info tinfo[NUM_THREADS];
 
+        int num_threads = ports_per_thread == 0 ? 1 : 20;
+#if DEBUG == 1
+        printf("extra ports: %d\ntotal ports: %d\nports per thread: %d\nnumber of threads: %d\n", extra_port, total_ports, ports_per_thread, num_threads);
+#endif
         for (int tnum = 0; tnum < num_threads; tnum++)
         {
                 tinfo[tnum].host = argv[1];
+
                 tinfo[tnum].start_port = start_port;
                 start_port += (ports_per_thread - 1);
                 if (tnum == num_threads - 1)
+                {
+#if DEBUG == 1
+                        printf("adding %d extra ports \n", extra_port);
+#endif
                         start_port += extra_port + 1;
+                }
                 tinfo[tnum].end_port = start_port;
                 start_port += 1;
 
+#if DEBUG == 1
+                printf("thread_num: %d (start: %d - end: %d)\n", tnum, tinfo[tnum].start_port, tinfo[tnum].end_port);
+#endif
                 int s = pthread_create(&tinfo[tnum].thread_id, NULL,
                                        &scanner, &tinfo[tnum]);
                 if (s != 0)
@@ -149,7 +159,6 @@ int main(int argc, char **argv)
                         handle_error_en(s, "pthread_join");
         }
 
-        free(tinfo);
         exit(EXIT_SUCCESS);
 
         return 0;
